@@ -58,7 +58,7 @@ func (i *IDTokenHandleHelper) GetAccessTokenHash(ctx context.Context, requester 
 	}
 	hashBuf := bytes.NewBuffer(hash.Sum([]byte{}))
 
-	return base64.RawURLEncoding.EncodeToString(hashBuf.Bytes()[:hashBuf.Len()/2])
+	return base64.RawStdEncoding.EncodeToString(hashBuf.Bytes()[:hashBuf.Len()/2])
 }
 
 func (i *IDTokenHandleHelper) generateIDToken(ctx context.Context, fosr fosite.Requester) (token string, err error) {

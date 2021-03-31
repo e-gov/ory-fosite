@@ -136,7 +136,7 @@ func TestGetAccessTokenHash(t *testing.T) {
 	h := &IDTokenHandleHelper{IDTokenStrategy: strat}
 
 	hash := h.GetAccessTokenHash(nil, req, resp)
-	assert.Equal(t, "Zfn_XBitThuDJiETU3OALQ", hash)
+	assert.Equal(t, "Zfn/XBitThuDJiETU3OALQ", hash)
 }
 
 func TestGetAccessTokenHashWithDifferentKeyLength(t *testing.T) {

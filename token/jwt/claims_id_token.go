@@ -32,7 +32,7 @@ type IDTokenClaims struct {
 	JTI                                 string
 	Issuer                              string
 	Subject                             string
-	Audience                            []string
+	Audience                            string
 	Nonce                               string
 	ExpiresAt                           time.Time
 	IssuedAt                            time.Time
@@ -70,7 +70,7 @@ func (c *IDTokenClaims) ToMap() map[string]interface{} {
 	if len(c.Audience) > 0 {
 		ret["aud"] = c.Audience
 	} else {
-		ret["aud"] = []string{}
+		ret["aud"] = ""
 	}
 
 	if !c.IssuedAt.IsZero() {
@@ -83,12 +83,6 @@ func (c *IDTokenClaims) ToMap() map[string]interface{} {
 		ret["exp"] = c.ExpiresAt.Unix()
 	} else {
 		delete(ret, "exp")
-	}
-
-	if !c.RequestedAt.IsZero() {
-		ret["rat"] = c.RequestedAt.Unix()
-	} else {
-		delete(ret, "rat")
 	}
 
 	if len(c.Nonce) > 0 {
@@ -109,12 +103,6 @@ func (c *IDTokenClaims) ToMap() map[string]interface{} {
 		delete(ret, "c_hash")
 	}
 
-	if !c.AuthTime.IsZero() {
-		ret["auth_time"] = c.AuthTime.Unix()
-	} else {
-		delete(ret, "auth_time")
-	}
-
 	if len(c.AuthenticationContextClassReference) > 0 {
 		ret["acr"] = c.AuthenticationContextClassReference
 	} else {
@@ -127,6 +115,7 @@ func (c *IDTokenClaims) ToMap() map[string]interface{} {
 		delete(ret, "amr")
 	}
 
+	ret["nbf"] = c.IssuedAt.Unix()
 	return ret
 
 }
