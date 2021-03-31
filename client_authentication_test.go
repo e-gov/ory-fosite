@@ -25,9 +25,12 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/rsa"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/ory/x/errorsx"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -88,6 +91,17 @@ func clientBasicAuthHeader(clientID, clientSecret string) http.Header {
 func TestAuthenticateClient(t *testing.T) {
 	const at = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 
+	var hashClientSecret = func(clientSecret []byte) ([]byte, error) {
+		var err error
+		hashedClientSecret := sha256.New()
+		_, err = hashedClientSecret.Write(clientSecret)
+		if err != nil {
+			return nil, errorsx.WithStack(ErrInvalidClient.WithWrap(err).WithDebug(err.Error()))
+		}
+		sha256Hash := hex.EncodeToString(hashedClientSecret.Sum(nil))
+		return []byte(sha256Hash), nil
+	}
+
 	hasher := &BCrypt{WorkFactor: 6}
 	f := &Fosite{
 		JWKSFetcherStrategy: NewDefaultJWKSFetcherStrategy(),
@@ -96,12 +110,16 @@ func TestAuthenticateClient(t *testing.T) {
 		TokenURL:            "token-url",
 	}
 
-	barSecret, err := hasher.Hash(context.TODO(), []byte("bar"))
+	barSecretHash, err := hashClientSecret([]byte("bar"))
+	require.NoError(t, err)
+	barSecret, err := hasher.Hash(context.TODO(), barSecretHash)
 	require.NoError(t, err)
 
 	// a secret containing various special characters
 	complexSecretRaw := "foo %66%6F%6F@$<§!✓"
-	complexSecret, err := hasher.Hash(context.TODO(), []byte(complexSecretRaw))
+	complexSecretHash, err := hashClientSecret([]byte(complexSecretRaw))
+	require.NoError(t, err)
+	complexSecret, err := hasher.Hash(context.TODO(), complexSecretHash)
 	require.NoError(t, err)
 
 	rsaKey := internal.MustRSAKey()

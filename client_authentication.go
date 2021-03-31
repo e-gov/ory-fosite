@@ -25,6 +25,8 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/rsa"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -253,7 +255,14 @@ func (f *Fosite) DefaultClientAuthenticationStrategy(ctx context.Context, r *htt
 
 func (f *Fosite) checkClientSecret(ctx context.Context, client Client, clientSecret []byte) error {
 	var err error
-	err = f.Hasher.Compare(ctx, client.GetHashedSecret(), clientSecret)
+	hashedClientSecret := sha256.New()
+	_, err = hashedClientSecret.Write(clientSecret)
+	if err != nil {
+		return errorsx.WithStack(ErrInvalidClient.WithWrap(err).WithDebug(err.Error()))
+	}
+	sha256Hash := hex.EncodeToString(hashedClientSecret.Sum(nil))
+
+	err = f.Hasher.Compare(ctx, client.GetHashedSecret(), []byte(sha256Hash))
 	if err == nil {
 		return nil
 	}
@@ -262,7 +271,7 @@ func (f *Fosite) checkClientSecret(ctx context.Context, client Client, clientSec
 		return err
 	}
 	for _, hash := range cc.GetRotatedHashes() {
-		err = f.Hasher.Compare(ctx, hash, clientSecret)
+		err = f.Hasher.Compare(ctx, hash, []byte(sha256Hash))
 		if err == nil {
 			return nil
 		}
