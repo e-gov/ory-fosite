@@ -67,16 +67,20 @@ func ExactScopeStrategy(haystack []string, needle string) bool {
 }
 
 func WildcardScopeStrategy(matchers []string, needle string) bool {
-	needleParts := strings.Split(needle, ".")
+	separator := ":"
+	if strings.Contains(needle, ".") && !strings.Contains(needle, ":") {
+		separator = "."
+	}
+	needleParts := strings.Split(needle, separator)
 	for _, matcher := range matchers {
-		matcherParts := strings.Split(matcher, ".")
+		matcherParts := strings.Split(matcher, separator)
 
 		if len(matcherParts) > len(needleParts) {
 			continue
 		}
 
 		var noteq bool
-		for k, c := range strings.Split(matcher, ".") {
+		for k, c := range strings.Split(matcher, separator) {
 			// this is the last item and the lengths are different
 			if k == len(matcherParts)-1 && len(matcherParts) != len(needleParts) {
 				if c != "*" {
